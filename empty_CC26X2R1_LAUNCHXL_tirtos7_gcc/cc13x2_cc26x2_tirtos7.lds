@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Texas Instruments Incorporated
+ * Copyright (c) 2017-2022, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-STACKSIZE = 0x800;
+__TI_STACK_SIZE = 0x600;
+HEAPSIZE = 0x4000; /* Size of heap buffer used by HeapMem */
+
+ENTRY(_c_int00)
 
 MEMORY
 {
@@ -65,15 +68,25 @@ SECTIONS {
     PROVIDE (_intvecs_base_address =
         DEFINED(_intvecs_base_address) ? _intvecs_base_address : 0x0);
 
-    .resetVecs (_intvecs_base_address) : AT (_intvecs_base_address) {
-        KEEP (*(.resetVecs))
+    .intvecs (_intvecs_base_address) : AT (_intvecs_base_address) {
+        KEEP (*(.intvecs))
     } > REGION_TEXT
 
     PROVIDE (_vtable_base_address =
         DEFINED(_vtable_base_address) ? _vtable_base_address : 0x20000000);
 
     .vtable (_vtable_base_address) (NOLOAD) : {
-        KEEP (*(.ramVecs))
+        KEEP (*(.vtable))
+    } > REGION_DATA
+
+    /* if a ROM-only symbol is present, then ROM is being used.
+     * Reserve memory for surgically placed module states.
+     */
+    _rom_data_start = 0x20000100;
+    _rom_data_size = DEFINED(ROM_DATA_SIZE) ? 12 : DEFINED(ROM_DATA_SIZE_NO_OAD) ? 0x108 : 0;
+
+    .rom_data_reserve (_rom_data_start): {
+        . += _rom_data_size;
     } > REGION_DATA
 
     /*
@@ -102,14 +115,14 @@ SECTIONS {
 
     DMA_UART0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x210);
     DMA_UART0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x220);
-    DMA_SPI0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS  = (UDMACC26XX_CONFIG_BASE + 0x230);
-    DMA_SPI0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS  = (UDMACC26XX_CONFIG_BASE + 0x240);
+    DMA_SPI0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x230);
+    DMA_SPI0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x240);
     DMA_UART1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x250);
     DMA_UART1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x260);
-    DMA_ADC_ALT_CONTROL_TABLE_ENTRY_ADDRESS      = (UDMACC26XX_CONFIG_BASE + 0x270);
-    DMA_GPT0A_ALT_CONTROL_TABLE_ENTRY_ADDRESS    = (UDMACC26XX_CONFIG_BASE + 0x290);
-    DMA_SPI1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS  = (UDMACC26XX_CONFIG_BASE + 0x300);
-    DMA_SPI1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS  = (UDMACC26XX_CONFIG_BASE + 0x310);
+    DMA_ADC_ALT_CONTROL_TABLE_ENTRY_ADDRESS     = (UDMACC26XX_CONFIG_BASE + 0x270);
+    DMA_GPT0A_ALT_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x290);
+    DMA_SPI1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x300);
+    DMA_SPI1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x310);
 
     /*
      * Allocate UART0, UART1, SPI0, SPI1, ADC, and GPTimer0 DMA descriptors at absolute addresses.
@@ -232,7 +245,6 @@ SECTIONS {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > REGION_ARM_EXTAB AT> REGION_ARM_EXTAB
 
-
     .nvs (NOLOAD) : ALIGN(0x2000) {
         *(.nvs)
     } > REGION_TEXT
@@ -251,28 +263,21 @@ SECTIONS {
         __bss_end__ = .;
     } > REGION_BSS AT> REGION_BSS
 
-    .heap : {
-        __heap_start__ = .;
-        end = __heap_start__;
-        _end = end;
-        __end = end;
-        KEEP(*(.heap))
-        __heap_end__ = .;
-        __HeapLimit = __heap_end__;
+    /* Heap buffer used by HeapMem */
+    .priheap : {
+        . = ALIGN (8);
+        __primary_heap_start__ = .;
+        . += HEAPSIZE;
+        __primary_heap_end__ = .;
     } > REGION_HEAP AT> REGION_HEAP
 
     .stack (NOLOAD) : ALIGN(0x8) {
-        _stack = .;
-        __stack = .;
+        __TI_STACK_BASE = .;
         KEEP(*(.stack))
-        . += STACKSIZE;
-        _stack_end = .;
-        __stack_end = .;
+        . += __TI_STACK_SIZE;
     } > REGION_STACK AT> REGION_STACK
 
     .log_data (COPY) : {
         KEEP (*(.log_data))
     } > REGION_LOG
 }
-
-ENTRY(resetISR)
