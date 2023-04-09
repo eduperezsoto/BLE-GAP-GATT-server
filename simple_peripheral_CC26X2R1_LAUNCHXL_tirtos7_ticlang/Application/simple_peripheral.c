@@ -101,7 +101,7 @@
  * CONSTANTS
  */
 // How often to perform periodic event (in ms)
-#define SP_PERIODIC_EVT_PERIOD               5000
+#define SP_PERIODIC_EVT_PERIOD               1000
 
 // Task configuration
 #define SP_TASK_PRIORITY                     1
@@ -339,8 +339,8 @@ static void SimplePeripheral_processGapMessage(gapEventHdr_t *pMsg);
 static void SimplePeripheral_advCallback(uint32_t event, void *pBuf, uintptr_t arg);
 static void SimplePeripheral_processAdvEvent(spGapAdvEventData_t *pEventData);
 static void SimplePeripheral_processAppMsg(spEvt_t *pMsg);
-static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId);
-static void SimplePeripheral_performPeriodicTask(void);
+static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId);        //Important
+static void SimplePeripheral_performPeriodicTask(void);                         //Important
 static void SimplePeripheral_updateRPA(void);
 static void SimplePeripheral_clockHandler(UArg arg);
 static void SimplePeripheral_passcodeCb(uint8_t *pDeviceAddr, uint16_t connHandle,
@@ -553,22 +553,25 @@ static void SimplePeripheral_init(void)
   // For more information, see the GATT and GATTServApp sections in the User's Guide:
   // http://software-dl.ti.com/lprf/ble5stack-latest/
   {
-    uint8_t charValue1 = 1;
-    uint8_t charValue2 = 2;
+    uint8_t rangingStatus = 0;
+    uint8_t rangingValue = 0;
+    /*uint8_t charValue2 = 2;
     uint8_t charValue3 = 3;
     uint8_t charValue4 = 4;
-    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
+    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };*/
 
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-                               &charValue1);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
+    SimpleProfile_SetParameter(RANGING_STATUS, sizeof(uint8_t),
+                               &rangingStatus);
+    SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint8_t),
+                                   &rangingValue);
+    /*SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
                                &charValue2);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
                                &charValue3);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
                                &charValue4);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
-                               charValue5);
+                               charValue5);*/
   }
 
   // Register callback with SimpleGATTprofile
@@ -1299,18 +1302,18 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
 
   switch(paramId)
   {
-    case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
+    case RANGING_STATUS:
+      SimpleProfile_GetParameter(RANGING_STATUS, &newValue);
 
       Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Char 1: %d", (uint16_t)newValue);
       break;
-
+      /*
     case SIMPLEPROFILE_CHAR3:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
 
       Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Char 3: %d", (uint16_t)newValue);
       break;
-
+*/
     default:
       // should not reach here!
       break;
@@ -1321,7 +1324,7 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
  * @fn      SimplePeripheral_performPeriodicTask
  *
  * @brief   Perform a periodic application task. This function gets called
- *          every five seconds (SP_PERIODIC_EVT_PERIOD). In this example,
+ *          every seconds (SP_PERIODIC_EVT_PERIOD). In this example,
  *          the value of the third characteristic in the SimpleGATTProfile
  *          service is retrieved from the profile, and then copied into the
  *          value of the the fourth characteristic.
@@ -1335,13 +1338,13 @@ static void SimplePeripheral_performPeriodicTask(void)
   uint8_t valueToCopy;
 
   // Call to retrieve the value of the third characteristic in the profile
-  if (SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &valueToCopy) == SUCCESS)
+  if (SimpleProfile_GetParameter(RANGING_VALUE, &valueToCopy) == SUCCESS)
   {
     // Call to set that value of the fourth characteristic in the profile.
     // Note that if notifications of the fourth characteristic have been
     // enabled by a GATT client device, then a notification will be sent
     // every time this function is called.
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
+    SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint8_t),
                                &valueToCopy);
   }
 }
