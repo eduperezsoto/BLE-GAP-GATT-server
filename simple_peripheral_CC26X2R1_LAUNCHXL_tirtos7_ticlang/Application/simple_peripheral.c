@@ -100,6 +100,10 @@
 /*********************************************************************
  * CONSTANTS
  */
+//Ranging actions
+#define RANGING_STARTED                     0x01
+#define RANGING_STOPPED                     0x02
+
 // How often to perform periodic event (in ms)
 #define SP_PERIODIC_EVT_PERIOD               1000
 
@@ -1292,10 +1296,11 @@ static void SimplePeripheral_charValueChangeCB(uint8_t paramId)
  * @fn      SimplePeripheral_processCharValueChangeEvt
  *
  * @brief   Process a pending Simple Profile characteristic value change
- *          event.
+ *          event. With this event you can detect which values have been written from the mobile app.
  *
  * @param   paramID - parameter ID of the value that was changed.
  */
+
 static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
 {
   uint8_t newValue;
@@ -1305,7 +1310,12 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
     case RANGING_STATUS:
       SimpleProfile_GetParameter(RANGING_STATUS, &newValue);
 
-      Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Char 1: %d", (uint16_t)newValue);
+      if(newValue == RANGING_STARTED) {
+          //CAN - Send in ID: 0x123 a 0x01
+
+      } else if (newValue == RANGING_STOPPED)
+          //CAN - Send in ID: 0x123 a 0x02
+
       break;
       /*
     case SIMPLEPROFILE_CHAR3:
@@ -1335,17 +1345,21 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
  */
 static void SimplePeripheral_performPeriodicTask(void)
 {
-  uint8_t valueToCopy;
+  uint8_t statusValue;
 
   // Call to retrieve the value of the third characteristic in the profile
-  if (SimpleProfile_GetParameter(RANGING_VALUE, &valueToCopy) == SUCCESS)
+  if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
   {
-    // Call to set that value of the fourth characteristic in the profile.
-    // Note that if notifications of the fourth characteristic have been
-    // enabled by a GATT client device, then a notification will be sent
-    // every time this function is called.
-    SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint8_t),
-                               &valueToCopy);
+    if(statusValue == RANGING_STARTED)
+    {
+        uint32_t valueToCopy = 0x11111111;
+        // Call to set that value of the fourth characteristic in the profile.
+        // Note that if notifications of the fourth characteristic have been
+        // enabled by a GATT client device, then a notification will be sent
+        // every time this function is called.
+        SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint32_t),
+                                   &valueToCopy);
+    }
   }
 }
 
