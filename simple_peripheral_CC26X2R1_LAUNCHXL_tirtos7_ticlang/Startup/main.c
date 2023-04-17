@@ -59,6 +59,7 @@
 #include "hal_assert.h"
 #include "bcomdef.h"
 #include "simple_peripheral.h"
+#include "can_task.h"
 #ifdef PTM_MODE
 #include "npi_task.h"
 #endif // PTM_MODE
@@ -153,6 +154,8 @@ int main()
 #endif // PTM_MODE
 
   SimplePeripheral_createTask();
+  CAN_createTasks();
+
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();

@@ -22,12 +22,17 @@ const AESECB1      = AESECB.addInstance();
 const ECDH         = scripting.addModule("/ti/drivers/ECDH");
 const ECDH1        = ECDH.addInstance();
 const GPIO         = scripting.addModule("/ti/drivers/GPIO");
+const GPIO1        = GPIO.addInstance();
+const GPIO2        = GPIO.addInstance();
 const GPIO3        = GPIO.addInstance();
 const GPIO4        = GPIO.addInstance();
+const GPIO5        = GPIO.addInstance();
 const NVS          = scripting.addModule("/ti/drivers/NVS");
 const NVS1         = NVS.addInstance();
 const Power        = scripting.addModule("/ti/drivers/Power");
 const RF           = scripting.addModule("/ti/drivers/RF");
+const SPI          = scripting.addModule("/ti/drivers/SPI", {}, false);
+const SPI1         = SPI.addInstance();
 const TRNG         = scripting.addModule("/ti/drivers/TRNG");
 const TRNG1        = TRNG.addInstance();
 const Settings     = scripting.addModule("/ti/posix/tirtos/Settings");
@@ -100,16 +105,29 @@ AESECB1.$name = "CONFIG_AESECB0";
 
 ECDH1.$name = "CONFIG_ECDH0";
 
-GPIO3.$hardware = system.deviceData.board.components["BTN-1"];
-GPIO3.$name     = "CONFIG_GPIO_BTN1";
+GPIO1.$hardware = system.deviceData.board.components["BTN-1"];
+GPIO1.$name     = "CONFIG_GPIO_BTN1";
 
-GPIO4.$hardware = system.deviceData.board.components["BTN-2"];
-GPIO4.$name     = "CONFIG_GPIO_BTN2";
+GPIO2.$hardware = system.deviceData.board.components["BTN-2"];
+GPIO2.$name     = "CONFIG_GPIO_BTN2";
+
+GPIO3.$name            = "Board_TCAN4550_IRQ";
+GPIO3.interruptTrigger = "Falling Edge";
+
+GPIO4.$name              = "Board_GPIO_TCAN4550_CS";
+GPIO4.mode               = "Output";
+GPIO4.initialOutputState = "High";
+GPIO4.outputStrength     = "High";
+
+GPIO5.$name = "Board_GPIO_TCAN4550_CAN_RST";
+GPIO5.mode  = "Output";
 
 NVS1.$name                    = "CONFIG_NVSINTERNAL";
 NVS1.internalFlash.$name      = "ti_drivers_nvs_NVSCC26XX0";
 NVS1.internalFlash.regionBase = 0x48000;
 NVS1.internalFlash.regionSize = 0x4000;
+
+SPI1.$name = "Board_SPI0";
 
 TRNG1.$name = "CONFIG_TRNG_0";
 
@@ -164,6 +182,15 @@ System.supportModule   = "SysCallback";
 Display1.uart.uart.$suggestSolution       = "UART0";
 Display1.uart.uart.txPin.$suggestSolution = "boosterpack.4";
 Display1.uart.uart.rxPin.$suggestSolution = "boosterpack.3";
-GPIO3.gpioPin.$suggestSolution            = "boosterpack.13";
-GPIO4.gpioPin.$suggestSolution            = "boosterpack.12";
+GPIO1.gpioPin.$suggestSolution            = "boosterpack.13";
+GPIO2.gpioPin.$suggestSolution            = "boosterpack.12";
+GPIO3.gpioPin.$suggestSolution            = "boosterpack.9";
+GPIO4.gpioPin.$suggestSolution            = "boosterpack.10";
+GPIO5.gpioPin.$suggestSolution            = "boosterpack.11";
+SPI1.spi.$suggestSolution                 = "SSI0";
+SPI1.spi.sclkPin.$suggestSolution         = "boosterpack.19";
+SPI1.spi.misoPin.$suggestSolution         = "boosterpack.30";
+SPI1.spi.mosiPin.$suggestSolution         = "boosterpack.29";
+SPI1.spi.dmaRxChannel.$suggestSolution    = "DMA_CH3";
+SPI1.spi.dmaTxChannel.$suggestSolution    = "DMA_CH4";
 Timer.rtc.$suggestSolution                = "RTC0";
