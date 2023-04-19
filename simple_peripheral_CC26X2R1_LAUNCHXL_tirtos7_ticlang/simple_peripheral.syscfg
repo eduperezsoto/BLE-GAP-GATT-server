@@ -1,7 +1,7 @@
 /**
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
- * @cliArgs --board "/ti/boards/CC26X2R1_LAUNCHXL" --rtos "tirtos7" --product "simplelink_cc13xx_cc26xx_sdk@6.41.00.17"
+ * @cliArgs --device "CC2642R1FRGZ" --package "RGZ" --part "Default" --rtos "tirtos7" --product "simplelink_cc13xx_cc26xx_sdk@6.41.00.17"
  * @versions {"tool":"1.15.0+2826"}
  */
 
@@ -84,10 +84,12 @@ CCFG.levelBootloaderBackdoor  = "Active low";
 CCFG.ccfgTemplate.$name       = "ti_devices_CCFG_CCFGCC26XXTemplate0";
 
 Display1.$name                    = "CONFIG_Display_0";
-Display1.$hardware                = system.deviceData.board.components.XDS110UART;
 Display1.enableANSI               = true;
 Display1.uartBufferSize           = 128;
 Display1.uart.$name               = "CONFIG_DISPLAY_UART";
+Display1.uart.uart.$assign        = "UART1";
+Display1.uart.uart.txPin.$assign  = "ball.18";
+Display1.uart.uart.rxPin.$assign  = "ball.19";
 Display1.uart.txPinInstance.$name = "CONFIG_GPIO_UART_TX";
 Display1.uart.rxPinInstance.$name = "CONFIG_GPIO_UART_RX";
 
@@ -100,11 +102,11 @@ AESECB1.$name = "CONFIG_AESECB0";
 
 ECDH1.$name = "CONFIG_ECDH0";
 
-GPIO3.$hardware = system.deviceData.board.components["BTN-1"];
-GPIO3.$name     = "CONFIG_GPIO_BTN1";
+GPIO3.$name           = "CONFIG_GPIO_BTN1";
+GPIO3.gpioPin.$assign = "ball.27";
 
-GPIO4.$hardware = system.deviceData.board.components["BTN-2"];
-GPIO4.$name     = "CONFIG_GPIO_BTN2";
+GPIO4.$name           = "CONFIG_GPIO_BTN2";
+GPIO4.gpioPin.$assign = "ball.20";
 
 NVS1.$name                    = "CONFIG_NVSINTERNAL";
 NVS1.internalFlash.$name      = "ti_drivers_nvs_NVSCC26XX0";
@@ -131,7 +133,8 @@ const Clock       = scripting.addModule("/ti/sysbios/knl/Clock", {}, false);
 Clock.tickPeriod  = 10;
 Clock.swiPriority = 5;
 
-const Timer = scripting.addModule("/ti/sysbios/family/arm/cc26xx/Timer", {}, false);
+const Timer       = scripting.addModule("/ti/sysbios/family/arm/cc26xx/Timer", {}, false);
+Timer.rtc.$assign = "RTC0";
 
 Idle2.$name   = "powerIdle";
 Idle2.idleFxn = "Power_idleFunc";
@@ -155,15 +158,3 @@ System.abortFxn        = "System_abortSpin";
 System.exitFxn         = "System_exitSpin";
 System.extendedFormats = "%f";
 System.supportModule   = "SysCallback";
-
-/**
- * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
- * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
- * re-solve from scratch.
- */
-Display1.uart.uart.$suggestSolution       = "UART0";
-Display1.uart.uart.txPin.$suggestSolution = "boosterpack.4";
-Display1.uart.uart.rxPin.$suggestSolution = "boosterpack.3";
-GPIO3.gpioPin.$suggestSolution            = "boosterpack.13";
-GPIO4.gpioPin.$suggestSolution            = "boosterpack.12";
-Timer.rtc.$suggestSolution                = "RTC0";
