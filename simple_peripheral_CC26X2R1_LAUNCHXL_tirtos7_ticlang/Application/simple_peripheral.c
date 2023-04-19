@@ -1309,7 +1309,7 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
   {
     case RANGING_STATUS:
       SimpleProfile_GetParameter(RANGING_STATUS, &newValue);
-
+      Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Char 3: %d", (uint16_t)newValue);
       if(newValue == RANGING_STARTED) {
           //CAN - Send in ID: 0x123 a 0x01
 
