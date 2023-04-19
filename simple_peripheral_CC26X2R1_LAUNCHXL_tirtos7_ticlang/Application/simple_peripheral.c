@@ -93,6 +93,10 @@
 #endif // PTM_MODE
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 /*********************************************************************
  * MACROS
  */
@@ -250,6 +254,7 @@ typedef struct
  * GLOBAL VARIABLES
  */
 
+
 // Display Interface
 Display_Handle dispHandle = NULL;
 
@@ -379,6 +384,8 @@ static void SimplePeripheral_processConnEvt(Gap_ConnEventRpt_t *pReport);
 void simple_peripheral_handleNPIRxInterceptEvent(uint8_t *pMsg);  // Declaration
 static void simple_peripheral_sendToNPI(uint8_t *buf, uint16_t len);  // Declaration
 #endif // PTM_MODE
+
+static void generateRandomNumber(uint8 *array);
 
 /*********************************************************************
  * EXTERN FUNCTIONS
@@ -1352,15 +1359,25 @@ static void SimplePeripheral_performPeriodicTask(void)
   {
     if(statusValue == RANGING_STARTED)
     {
-        uint32_t valueToCopy = 0x11111111;
+        //uint32_t valueToCopy = 0x11111111;
+        uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
+        generateRandomNumber(valueToCopy);
         // Call to set that value of the fourth characteristic in the profile.
         // Note that if notifications of the fourth characteristic have been
         // enabled by a GATT client device, then a notification will be sent
         // every time this function is called.
-        SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint32_t),
+        SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
                                    &valueToCopy);
     }
   }
+}
+
+
+static void generateRandomNumber(uint8 *array) {
+    srand(time(NULL));
+    for(int i = 0; i < SIMPLEPROFILE_RANGING_VALUE_LEN; i++) {
+       array[i] = rand() & 0xFF;
+    }
 }
 
 /*********************************************************************
