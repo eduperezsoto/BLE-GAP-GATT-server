@@ -564,7 +564,7 @@ static void SimplePeripheral_init(void)
   // http://software-dl.ti.com/lprf/ble5stack-latest/
   {
     uint8_t rangingStatus = 0;
-    uint8_t rangingValue = 0;
+    uint8_t rangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN] = { 0,0,0,0 };
     /*uint8_t charValue2 = 2;
     uint8_t charValue3 = 3;
     uint8_t charValue4 = 4;
@@ -572,7 +572,7 @@ static void SimplePeripheral_init(void)
 
     SimpleProfile_SetParameter(RANGING_STATUS, sizeof(uint8_t),
                                &rangingStatus);
-    SimpleProfile_SetParameter(RANGING_VALUE, sizeof(uint8_t),
+    SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
                                    &rangingValue);
     /*SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
                                &charValue2);
@@ -643,6 +643,8 @@ static void SimplePeripheral_init(void)
   //Display_printf(dispHandle, SP_CONNECTION_STATE, 0, "BLE GAP/GATT server \n");
   Display_printf(dispHandle, SP_RANGING_SECTION_DELIMITATION, 0, "-------------------");
   Display_printf(dispHandle, SP_RANGIN_SECTION_NAME, 0, "-> Ranging");
+  Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
+  Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
   //Display_printf(dispHandle, SP_RANGING_STATUS, 0, "BLE GAP/GATT server \n");
   //Display_printf(dispHandle, SP_RANGING_VALUE, 0, "BLE GAP/GATT server \n");
 
@@ -1166,8 +1168,13 @@ static void SimplePeripheral_processGapMessage(gapEventHdr_t *pMsg)
       // Display the amount of current connections
       uint8_t numActive = linkDB_NumActive("");
       Display_printf(dispHandle, SP_CONNECTION_STATE, 0, "Device Disconnected!");
+
+      uint8_t rangingStatus = 0;
+      SimpleProfile_SetParameter(RANGING_STATUS, sizeof(uint8_t), &rangingStatus);
+      Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
+      Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
       //Display_printf(dispHandle, SP_, 0, "");
-      Display_clearLines(dispHandle, SP_RANGING_STATUS, SP_RANGING_VALUE);
+      //Display_clearLines(dispHandle, SP_RANGING_STATUS, SP_RANGING_VALUE);
 
       // Remove the connection from the list and disable RSSI if needed
       SimplePeripheral_removeConn(pPkt->connectionHandle);
