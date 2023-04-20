@@ -565,23 +565,11 @@ static void SimplePeripheral_init(void)
   {
     uint8_t rangingStatus = 0;
     uint8_t rangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN] = { 0,0,0,0 };
-    /*uint8_t charValue2 = 2;
-    uint8_t charValue3 = 3;
-    uint8_t charValue4 = 4;
-    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };*/
 
     SimpleProfile_SetParameter(RANGING_STATUS, sizeof(uint8_t),
                                &rangingStatus);
     SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
                                    &rangingValue);
-    /*SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
-                               &charValue2);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
-                               &charValue3);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &charValue4);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
-                               charValue5);*/
   }
 
   // Register callback with SimpleGATTprofile
@@ -632,21 +620,13 @@ static void SimplePeripheral_init(void)
   // preprocessor definitions
   dispHandle = Display_open(Display_Type_ANY, NULL);
 
-  // Initialize Two-Button Menu module
-  //TBM_SET_TITLE(&spMenuMain, "BLE GAP/GATT server");
-  //tbm_setItemStatus(&spMenuMain, TBM_ITEM_NONE, TBM_ITEM_ALL);
-
-  //tbm_initTwoBtnMenu(dispHandle, &spMenuMain, 5, SimplePeripheral_menuSwitchCb);
   Display_printf(dispHandle, SP_TITLE, 0, "BLE GAP/GATT server \n");
   Display_printf(dispHandle, SP_START_CONECTION_SECTION_DELIMITATION, 0, "-------------------");
   Display_printf(dispHandle, SP_START_CONECTION_SECTION_NAME, 0, "-> Connection state");
-  //Display_printf(dispHandle, SP_CONNECTION_STATE, 0, "BLE GAP/GATT server \n");
   Display_printf(dispHandle, SP_RANGING_SECTION_DELIMITATION, 0, "-------------------");
   Display_printf(dispHandle, SP_RANGIN_SECTION_NAME, 0, "-> Ranging");
   Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
   Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
-  //Display_printf(dispHandle, SP_RANGING_STATUS, 0, "BLE GAP/GATT server \n");
-  //Display_printf(dispHandle, SP_RANGING_VALUE, 0, "BLE GAP/GATT server \n");
 
 
 #ifdef PTM_MODE
@@ -788,18 +768,6 @@ static uint8_t SimplePeripheral_processStackMsg(ICall_Hdr *pMsg)
           {
             case HCI_LE_SET_PHY:
             {
-              if (pMyMsg->cmdStatus == HCI_ERROR_CODE_UNSUPPORTED_REMOTE_FEATURE)
-              {
-                //Display_printf(dispHandle, SP_ROW_STATUS_1, 0,
-                  //      "PHY Change failure, peer does not support this");
-              }
-              else
-              {
-                //Display_printf(dispHandle, SP_ROW_STATUS_1, 0,
-                  //             "PHY Update Status Event: 0x%x",
-                    //           pMyMsg->cmdStatus);
-              }
-
               SimplePeripheral_updatePHYStat(HCI_LE_SET_PHY, (uint8_t *)pMsg);
               break;
             }
@@ -819,22 +787,6 @@ static uint8_t SimplePeripheral_processStackMsg(ICall_Hdr *pMsg)
           // A Phy Update Has Completed or Failed
           if (pPUC->BLEEventCode == HCI_BLE_PHY_UPDATE_COMPLETE_EVENT)
           {
-            if (pPUC->status != SUCCESS)
-            {
-              //Display_printf(dispHandle, SP_ROW_STATUS_1, 0,
-                //             "PHY Change failure");
-            }
-            else
-            {
-              // Only symmetrical PHY is supported.
-              // rxPhy should be equal to txPhy.
-              // Display_printf(dispHandle, SP_ROW_STATUS_2, 0,
-              //                "PHY Updated to %s",
-              //                (pPUC->rxPhy == PHY_UPDATE_COMPLETE_EVENT_1M) ? "1M" :
-              //                (pPUC->rxPhy == PHY_UPDATE_COMPLETE_EVENT_2M) ? "2M" :
-              //                (pPUC->rxPhy == PHY_UPDATE_COMPLETE_EVENT_CODED) ? "CODED" : "Unexpected PHY Value");
-            }
-
             SimplePeripheral_updatePHYStat(HCI_BLE_PHY_UPDATE_COMPLETE_EVENT, (uint8_t *)pMsg);
           }
           break;
@@ -903,21 +855,6 @@ static uint8_t SimplePeripheral_processStackMsg(ICall_Hdr *pMsg)
  */
 static uint8_t SimplePeripheral_processGATTMsg(gattMsgEvent_t *pMsg)
 {
-  if (pMsg->method == ATT_FLOW_CTRL_VIOLATED_EVENT)
-  {
-    // ATT request-response or indication-confirmation flow control is
-    // violated. All subsequent ATT requests or indications will be dropped.
-    // The app is informed in case it wants to drop the connection.
-
-    // Display the opcode of the message that caused the violation.
-    //Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "FC Violated: %d", pMsg->msg.flowCtrlEvt.opcode);
-  }
-  else if (pMsg->method == ATT_MTU_UPDATED_EVENT)
-  {
-    // MTU size updated
-    // Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "MTU Size: %d", pMsg->msg.mtuEvt.MTU);
-  }
-
   // Free message payload. Needed only for ATT Protocol messages
   GATT_bm_free(&pMsg->msg, pMsg->method);
 
@@ -1099,11 +1036,6 @@ static void SimplePeripheral_processGapMessage(gapEventHdr_t *pMsg)
         status = GapAdv_enable(advHandleLongRange, GAP_ADV_ENABLE_OPTIONS_USE_MAX , 0);
         SIMPLEPERIPHERAL_ASSERT(status == SUCCESS);
 
-        // Display device address
-        // Display_printf(dispHandle, SP_ROW_IDA, 0, "%s Addr: %s",
-        //                (addrMode <= ADDRMODE_RANDOM) ? "Dev" : "ID",
-        //                Util_convertBdAddr2Str(pPkt->devAddr));
-
         if (addrMode > ADDRMODE_RANDOM)
         {
           SimplePeripheral_updateRPA();
@@ -1173,8 +1105,7 @@ static void SimplePeripheral_processGapMessage(gapEventHdr_t *pMsg)
       SimpleProfile_SetParameter(RANGING_STATUS, sizeof(uint8_t), &rangingStatus);
       Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
       Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
-      //Display_printf(dispHandle, SP_, 0, "");
-      //Display_clearLines(dispHandle, SP_RANGING_STATUS, SP_RANGING_VALUE);
+
 
       // Remove the connection from the list and disable RSSI if needed
       SimplePeripheral_removeConn(pPkt->connectionHandle);
@@ -1237,20 +1168,6 @@ static void SimplePeripheral_processGapMessage(gapEventHdr_t *pMsg)
       // Get the address from the connection handle
       linkDBInfo_t linkInfo;
       linkDB_GetInfo(pPkt->connectionHandle, &linkInfo);
-
-      if(pPkt->status == SUCCESS)
-      {
-        // Display the address of the connection update
-        // Display_printf(dispHandle, SP_ROW_STATUS_2, 0, "Link Param Updated: %s",
-        //                Util_convertBdAddr2Str(linkInfo.addr));
-      }
-      else
-      {
-        // Display the address of the connection update failure
-        // Display_printf(dispHandle, SP_ROW_STATUS_2, 0,
-        //                "Link Param Update Failed 0x%x: %s", pPkt->opcode,
-        //                Util_convertBdAddr2Str(linkInfo.addr));
-      }
 
       // Check if there are any queued parameter updates
       spConnHandleEntry_t *connHandleEntry = (spConnHandleEntry_t *)List_get(&paramUpdateList);
@@ -1333,11 +1250,9 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
     case RANGING_STATUS:
       SimpleProfile_GetParameter(RANGING_STATUS, &status);
       if(status == RANGING_STARTED) {
-          //CAN - Send in ID: 0x123 a 0x01
           Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
 
       } else if (status == RANGING_STOPPED)
-          //CAN - Send in ID: 0x123 a 0x02
           Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
           Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
       break;
@@ -1370,13 +1285,8 @@ static void SimplePeripheral_performPeriodicTask(void)
   {
     if(statusValue == RANGING_STARTED)
     {
-        //uint32_t valueToCopy = 0x11111111;
         uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
         generateRandomNumber(valueToCopy);
-        // Call to set that value of the fourth characteristic in the profile.
-        // Note that if notifications of the fourth characteristic have been
-        // enabled by a GATT client device, then a notification will be sent
-        // every time this function is called.
         SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
                                    &valueToCopy);
         Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
@@ -1413,9 +1323,6 @@ static void SimplePeripheral_updateRPA(void)
 
   if (memcmp(pRpaNew, rpa, B_ADDR_LEN))
   {
-    // If the RPA has changed, update the display
-    // Display_printf(dispHandle, SP_ROW_RPA, 0, "RP Addr: %s",
-    //                Util_convertBdAddr2Str(pRpaNew));
     memcpy(rpa, pRpaNew, B_ADDR_LEN);
   }
 }
@@ -1535,7 +1442,6 @@ bool SimplePeripheral_doSetConnPhy(uint8 index)
   uint8_t connIndex = SimplePeripheral_getConnIndex(menuConnHandle);
   if (connIndex >= MAX_NUM_BLE_CONNS)
   {
-    //Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Connection handle is not in the connList !!!");
     return FALSE;
   }
 
@@ -1550,9 +1456,6 @@ bool SimplePeripheral_doSetConnPhy(uint8 index)
     SimplePeripheral_stopAutoPhyChange(connList[connIndex].connHandle);
 
     SimplePeripheral_setPhy(menuConnHandle, 0, phy[index], phy[index], 0);
-
-   // Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "PHY preference: %s",
-     //              TBM_GET_ACTION_DESC(&spMenuConnPhy, index));
   }
   else
   {
@@ -1598,13 +1501,9 @@ static void SimplePeripheral_processAdvEvent(spGapAdvEventData_t *pEventData)
   {
     case GAP_EVT_ADV_START_AFTER_ENABLE:
       BLE_LOG_INT_TIME(0, BLE_LOG_MODULE_APP, "APP : ---- GAP_EVT_ADV_START_AFTER_ENABLE", 0);
-      // Display_printf(dispHandle, SP_ROW_ADVSTATE, 0, "Adv Set %d Enabled",
-      //                *(uint8_t *)(pEventData->pBuf));
       break;
 
     case GAP_EVT_ADV_END_AFTER_DISABLE:
-      // Display_printf(dispHandle, SP_ROW_ADVSTATE, 0, "Adv Set %d Disabled",
-      //                *(uint8_t *)(pEventData->pBuf));
       break;
 
     case GAP_EVT_ADV_START:
@@ -1617,9 +1516,6 @@ static void SimplePeripheral_processAdvEvent(spGapAdvEventData_t *pEventData)
     {
 #ifndef Display_DISABLE_ALL
       GapAdv_setTerm_t *advSetTerm = (GapAdv_setTerm_t *)(pEventData->pBuf);
-
-      // Display_printf(dispHandle, SP_ROW_ADVSTATE, 0, "Adv Set %d disabled after conn %d",
-      //                advSetTerm->handle, advSetTerm->connHandle );
 #endif
     }
     break;
@@ -1717,40 +1613,15 @@ static void SimplePeripheral_processPairState(spPairStateData_t *pPairData)
   switch (state)
   {
     case GAPBOND_PAIRING_STATE_STARTED:
-        //  Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Pairing started");
       break;
 
     case GAPBOND_PAIRING_STATE_COMPLETE:
-      if (status == SUCCESS)
-      {
-          //  Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Pairing success");
-      }
-      else
-      {
-          // Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Pairing fail: %d", status);
-      }
       break;
 
     case GAPBOND_PAIRING_STATE_ENCRYPTED:
-      if (status == SUCCESS)
-      {
-          //  Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Encryption success");
-      }
-      else
-      {
-          //  Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Encryption failed: %d", status);
-      }
       break;
 
     case GAPBOND_PAIRING_STATE_BOND_SAVED:
-      if (status == SUCCESS)
-      {
-          // Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Bond save success");
-      }
-      else
-      {
-          //Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Bond save failed: %d", status);
-      }
       break;
 
     default:
@@ -1767,12 +1638,6 @@ static void SimplePeripheral_processPairState(spPairStateData_t *pPairData)
  */
 static void SimplePeripheral_processPasscode(spPasscodeData_t *pPasscodeData)
 {
-  // Display passcode to user
-  if (pPasscodeData->uiOutputs != 0)
-  {
-      //Display_printf(dispHandle, SP_ROW_CONNECTION, 0, "Passcode: %d",
-      //    B_APP_DEFAULT_PASSCODE);
-  }
 
   // Send passcode response
   GAPBondMgr_PasscodeRsp(pPasscodeData->connHandle , SUCCESS,
@@ -1809,7 +1674,6 @@ static void SimplePeripheral_processConnEvt(Gap_ConnEventRpt_t *pReport)
 
   if (connIndex >= MAX_NUM_BLE_CONNS)
   {
-    //Display_printf(dispHandle, SP_ROW_STATUS_1, 0, "Connection handle is not in the connList !!!");
     return;
   }
 
@@ -1864,10 +1728,6 @@ bool SimplePeripheral_doSelectConn(uint8_t index)
 
   // Set the menu title and go to this connection's context
   TBM_SET_TITLE(&spMenuPerConn, TBM_GET_ACTION_DESC(&spMenuSelectConn, index));
-
-  // Clear non-connection-related message
-  //Display_clearLine(dispHandle, SP_ROW_CONNECTION);
-
   tbm_goTo(&spMenuPerConn);
 
   return (true);
@@ -2305,11 +2165,6 @@ static void SimplePeripheral_processCmdCompleteEvt(hciEvt_CmdComplete_t *pMsg)
           } // end of if (connList[index].phyCngRq == FALSE)
         } // end of if (rssi != LL_RSSI_NOT_AVAILABLE)
 
-        //Display_printf(dispHandle, SP_ROW_RSSI, 0,
-        //            "RSSI:%d dBm, AVG RSSI:%d dBm",
-        //            (uint32_t)(rssi),
-        //            connList[index].rssiAvg);
-
 	  } // end of if (status == SUCCESS)
       break;
     }
@@ -2587,13 +2442,6 @@ static void SimplePeripheral_menuSwitchCb(tbmMenuObj_t* pMenuObjCurr,
         }
       }
     }
-  }
-  else if (pMenuObjNext == &spMenuMain)
-  {
-    // Now we are not in a specific connection's context
-
-    // Clear connection-related message
-    //Display_clearLine(dispHandle, SP_ROW_CONNECTION);
   }
 }
 /*********************************************************************
