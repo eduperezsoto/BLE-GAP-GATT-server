@@ -60,9 +60,9 @@
 /*********************************************************************
  * CONSTANTS
  */
-#define CAN_MSG_1_EVT                         Event_Id_00
+#define CAN_MSG_RECEIVED                       Event_Id_00
 
-#define CAN_ALL_EVENTS                        (CAN_MSG_1_EVT)
+#define CAN_ALL_EVENTS                        (CAN_MSG_RECEIVED)
 
 // Task configuration
 #define CAN_TASK_PRIORITY            1
@@ -77,11 +77,11 @@ static Event_Handle canEventHandle;
 /*********************************************************************
  * GLOBAL VARIABLES
  */
-uint8_t  msg_rx_Data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t  msg_rx_Data[4] = {0, 0, 0, 0};
 uint8_t  msg_rx_DLC;
 uint32_t msg_rx_ID;
 
-uint8_t msg_tx_1_Data[8] = {1, 2, 3, 4, 5, 0, 0, 0};
+uint8_t msg_tx_init_Data = 0;
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -130,20 +130,8 @@ void CAN_taskFxn(UArg a0, UArg a1)
     /* Initialize CAN Stack */
     Init_CAN();
 
-    while(1)
-    {
-        events = Event_pend(canEventHandle, Event_Id_NONE, CAN_ALL_EVENTS,
-                            10000);
-        if (events)
-        {
-            if (events & CAN_MSG_1_EVT)
-            {
-                storeEvents ^= CAN_MSG_1_EVT;
-            }
-        }
-        /* Node0Info - rtls_master */
-        HW_Tx_Msg(0x330, 0x08, msg_tx_1_Data);
-    }
+    //CAN started msg
+    HW_Tx_Msg(0x123, 0x01, &msg_tx_init_Data);
 }
 
 /*********************************************************************
@@ -157,7 +145,7 @@ void CAN_taskFxn(UArg a0, UArg a1)
  */
 void CAN_msg_1_Handler(void)
 {
-    Event_post(canEventHandle, CAN_MSG_1_EVT);
+    Event_post(canEventHandle, CAN_MSG_RECEIVED);
 }
 
 /***********************************************************

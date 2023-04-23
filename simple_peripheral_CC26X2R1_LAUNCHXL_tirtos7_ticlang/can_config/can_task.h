@@ -46,12 +46,13 @@ extern "C"
 /*********************************************************************
 *  EXTERNAL VARIABLES
 */
-extern uint8_t msg_tx_1_Data[8];
+extern uint8_t msg_tx_init_Data;
+extern uint8_t msg_rx_Data[4];
 
 /*********************************************************************
  * CONSTANTS
  */
-#define CAN_RX_ID_MSG      0x200
+#define CAN_RX_ID_MSG      0x124
 #define CAN_RX_ID_MSG_TYPE STANDARD_ID
 
 /*********************************************************************

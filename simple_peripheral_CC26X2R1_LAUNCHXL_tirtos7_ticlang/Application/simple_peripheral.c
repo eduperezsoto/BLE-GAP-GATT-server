@@ -54,7 +54,8 @@
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/knl/Event.h>
 #include <ti/sysbios/knl/Queue.h>
-
+#include "can_hw.h"
+#include "can_task.h"
 #include <ti/display/Display.h>
 
 #if (!(defined __TI_COMPILER_VERSION__) && !(defined __GNUC__))
@@ -118,6 +119,9 @@
 #define SP_TASK_STACK_SIZE                   1024
 #endif
 
+// CAN
+#define SP_RX_RANGING_VALUE                     Event_Id_00
+
 // Application events
 #define SP_STATE_CHANGE_EVT                  0
 #define SP_CHAR_CHANGE_EVT                   1
@@ -136,7 +140,8 @@
 
 // Bitwise OR of all RTOS events to pend on
 #define SP_ALL_EVENTS                        (SP_ICALL_EVT             | \
-                                              SP_QUEUE_EVT)
+                                              SP_QUEUE_EVT            | \
+                                              SP_RX_RANGING_VALUE)
 
 // Size of string-converted device address ("0xXXXXXXXXXXXX")
 #define SP_ADDR_STR_SIZE     15
@@ -713,6 +718,23 @@ static void SimplePeripheral_taskFxn(UArg a0, UArg a1)
           }
         }
       }
+
+      // CAN
+      if (events & SP_RX_RANGING_VALUE)
+      {
+          uint8_t statusValue;
+
+          if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
+          {
+              if(statusValue == RANGING_STARTED)
+              {
+                  SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
+                                                     &msg_rx_Data);
+              }
+          }
+
+      }
+
     }
   }
 }
@@ -1245,21 +1267,50 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
 {
   uint8_t status;
   uint8 value[SIMPLEPROFILE_RANGING_VALUE_LEN];
-  switch(paramId)
+
+  if (SimpleProfile_GetParameter(RANGING_STATUS, &status) == SUCCESS)
   {
-    case RANGING_STATUS:
-      SimpleProfile_GetParameter(RANGING_STATUS, &status);
-      if(status == RANGING_STARTED) {
-          Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
+      switch(paramId)
+      {
+        case RANGING_STATUS:
+          if(status == RANGING_STARTED) {
+              //CAN
+              uint8_t msg_tx_start_ranging = 0x01;
+              HW_Tx_Msg(0x123, 0x01, &msg_tx_start_ranging);
 
-      } else if (status == RANGING_STOPPED)
-          Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
-          Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
-      break;
+              //UART
+              Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
 
-    default:
-      // should not reach here!
-      break;
+          } else if (status == RANGING_STOPPED) {
+              //CAN
+              uint8_t msg_tx_stop_ranging = 0x02;
+              HW_Tx_Msg(0x123, 0x01, &msg_tx_stop_ranging);
+
+              //UART
+              Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
+              Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
+          }
+          break;
+
+        case RANGING_VALUE:
+            if(status == RANGING_STARTED) {
+                  uint8 rangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN];
+
+                  //Set distance in charasteristic
+                  if (SimpleProfile_GetParameter(RANGING_VALUE, &rangingValue) == SUCCESS)
+                  {
+
+                      //UART
+                      Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
+                      Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",rangingValue[0], rangingValue[1], rangingValue[2], rangingValue[3] );
+                  }
+            }
+            break;
+
+        default:
+          // should not reach here!
+          break;
+      }
   }
 }
 
@@ -1285,12 +1336,17 @@ static void SimplePeripheral_performPeriodicTask(void)
   {
     if(statusValue == RANGING_STARTED)
     {
-        uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
-        generateRandomNumber(valueToCopy);
-        SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
-                                   &valueToCopy);
-        Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
-        Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",valueToCopy[0], valueToCopy[1], valueToCopy[2], valueToCopy[3] );
+        //Get random distance
+        //uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
+        //generateRandomNumber(valueToCopy);
+
+        //Set distance in charasteristic
+        //SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
+        //                           &valueToCopy);
+
+        //UART
+        //Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
+        //Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",valueToCopy[0], valueToCopy[1], valueToCopy[2], valueToCopy[3] );
 
     }
   }
