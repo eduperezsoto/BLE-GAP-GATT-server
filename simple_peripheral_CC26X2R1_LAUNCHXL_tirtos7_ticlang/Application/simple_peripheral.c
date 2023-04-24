@@ -54,7 +54,8 @@
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/knl/Event.h>
 #include <ti/sysbios/knl/Queue.h>
-
+#include "can_hw.h"
+#include "can_task.h"
 #include <ti/display/Display.h>
 
 #if (!(defined __TI_COMPILER_VERSION__) && !(defined __GNUC__))
@@ -104,9 +105,7 @@
 /*********************************************************************
  * CONSTANTS
  */
-//Ranging actions
-#define RANGING_STARTED                     0x01
-#define RANGING_STOPPED                     0x02
+
 
 // How often to perform periodic event (in ms)
 #define SP_PERIODIC_EVT_PERIOD               1000
@@ -713,6 +712,8 @@ static void SimplePeripheral_taskFxn(UArg a0, UArg a1)
           }
         }
       }
+
+
     }
   }
 }
@@ -1244,22 +1245,37 @@ static void SimplePeripheral_charValueChangeCB(uint8_t paramId)
 static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
 {
   uint8_t status;
-  uint8 value[SIMPLEPROFILE_RANGING_VALUE_LEN];
-  switch(paramId)
+
+  if (SimpleProfile_GetParameter(RANGING_STATUS, &status) == SUCCESS)
   {
-    case RANGING_STATUS:
-      SimpleProfile_GetParameter(RANGING_STATUS, &status);
-      if(status == RANGING_STARTED) {
-          Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
+      switch(paramId)
+      {
+        case RANGING_STATUS:
+          if(status == RANGING_STARTED) {
+              //CAN
+              uint8_t  distance_value_reset[4] = {0, 0, 0, 0};
+              memcpy(ranging_value_can, distance_value_reset, SIMPLEPROFILE_RANGING_VALUE_LEN);
+              uint8_t msg_tx_start_ranging = 0x01;
+              HW_Tx_Msg(0x123, 0x01, &msg_tx_start_ranging);
 
-      } else if (status == RANGING_STOPPED)
-          Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
-          Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
-      break;
+              //UART
+              Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
 
-    default:
-      // should not reach here!
-      break;
+          } else if (status == RANGING_STOPPED) {
+              //CAN
+              uint8_t msg_tx_stop_ranging = 0x02;
+              HW_Tx_Msg(0x123, 0x01, &msg_tx_stop_ranging);
+
+              //UART
+              Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Disabled");
+              Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
+          }
+          break;
+
+        default:
+          // should not reach here!
+          break;
+      }
   }
 }
 
@@ -1285,17 +1301,18 @@ static void SimplePeripheral_performPeriodicTask(void)
   {
     if(statusValue == RANGING_STARTED)
     {
-        uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
-        generateRandomNumber(valueToCopy);
+        //Set distance in charasteristic
         SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
-                                   &valueToCopy);
+                                   &ranging_value_can);
+
+        //UART
         Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
-        Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",valueToCopy[0], valueToCopy[1], valueToCopy[2], valueToCopy[3] );
+        Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",ranging_value_can[0], ranging_value_can[1], ranging_value_can[2], ranging_value_can[3] );
 
     }
   }
-}
 
+}
 
 static void generateRandomNumber(uint8 *array) {
     srand(time(NULL));

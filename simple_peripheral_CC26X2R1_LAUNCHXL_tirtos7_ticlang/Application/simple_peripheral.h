@@ -65,7 +65,9 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-
+//Ranging actions
+#define RANGING_STARTED                     0x01
+#define RANGING_STOPPED                     0x02
 /*********************************************************************
  * MACROS
  */

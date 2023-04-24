@@ -55,6 +55,7 @@
 #include <ti/drivers/power/PowerCC26XX.h>
 #include <ti/sysbios/BIOS.h>
 
+#include "can_task.h"
 #include <icall.h>
 #include "hal_assert.h"
 #include "bcomdef.h"
@@ -153,6 +154,7 @@ int main()
 #endif // PTM_MODE
 
   SimplePeripheral_createTask();
+  CAN_createTasks();
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();
