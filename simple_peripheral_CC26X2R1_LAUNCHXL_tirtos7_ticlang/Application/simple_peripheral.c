@@ -1245,7 +1245,6 @@ static void SimplePeripheral_charValueChangeCB(uint8_t paramId)
 static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
 {
   uint8_t status;
-  uint8 value[SIMPLEPROFILE_RANGING_VALUE_LEN];
 
   if (SimpleProfile_GetParameter(RANGING_STATUS, &status) == SUCCESS)
   {
@@ -1254,6 +1253,8 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
         case RANGING_STATUS:
           if(status == RANGING_STARTED) {
               //CAN
+              uint8_t  distance_value_reset[4] = {0, 0, 0, 0};
+              memcpy(ranging_value_can, distance_value_reset, SIMPLEPROFILE_RANGING_VALUE_LEN);
               uint8_t msg_tx_start_ranging = 0x01;
               HW_Tx_Msg(0x123, 0x01, &msg_tx_start_ranging);
 
@@ -1270,21 +1271,7 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
               Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
           }
           break;
-          /*
-        case RANGING_VALUE:
-            if(status == RANGING_STARTED) {
-                  uint8 rangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN];
 
-                  //Set distance in charasteristic
-                  if (SimpleProfile_GetParameter(RANGING_VALUE, &rangingValue) == SUCCESS)
-                  {
-                      //UART
-                      Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
-                      Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",rangingValue[0], rangingValue[1], rangingValue[2], rangingValue[3] );
-                  }
-            }
-            break;
-*/
         default:
           // should not reach here!
           break;
@@ -1307,19 +1294,13 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
  */
 static void SimplePeripheral_performPeriodicTask(void)
 {
-
   uint8_t statusValue;
-  //uint8_t currentRangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN];
 
   // Call to retrieve the value of the third characteristic in the profile
   if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
   {
     if(statusValue == RANGING_STARTED)
     {
-        //Get random distance
-        //uint8 valueToCopy[SIMPLEPROFILE_RANGING_VALUE_LEN] = {0,0,0,0};
-        //generateRandomNumber(valueToCopy);
-
         //Set distance in charasteristic
         SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
                                    &ranging_value_can);
