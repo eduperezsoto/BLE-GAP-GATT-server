@@ -52,6 +52,12 @@
 #include "can_task.h"
 #include "can_hw.h"
 #include "can_hw_config.h"
+#include "simple_peripheral.h"
+#include <icall_ble_api.h>
+#include <devinfoservice.h>
+#include <simple_gatt_profile.h>
+
+
 
 /*********************************************************************
  * MACROS
@@ -78,6 +84,7 @@ static Event_Handle canEventHandle;
  * GLOBAL VARIABLES
  */
 uint8_t  msg_rx_Data[4] = {0, 0, 0, 0};
+uint8_t  ranging_value_can[4] = {0, 0, 0, 0};
 uint8_t  msg_rx_DLC;
 uint32_t msg_rx_ID;
 
@@ -122,6 +129,10 @@ void CAN_taskFxn(UArg a0, UArg a1)
     SPI_init();
     bspSpiOpen();
 
+    // LED config
+    GPIO_setConfig(LED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW );
+    GPIO_write(LED, CONFIG_GPIO_LED_ON);
+
     /* TCAN4550 IRQ init */
     GPIO_setCallback(Board_TCAN4550_IRQ, (GPIO_CallbackFxn) TCAN4550_irqHandler);
     GPIO_clearInt(Board_TCAN4550_IRQ);
@@ -132,6 +143,32 @@ void CAN_taskFxn(UArg a0, UArg a1)
 
     //CAN started msg
     HW_Tx_Msg(0x123, 0x01, &msg_tx_init_Data);
+
+    while(1)
+    {
+        events = Event_pend(canEventHandle, Event_Id_NONE, CAN_ALL_EVENTS,
+                            10000);
+        if (events)
+        {
+            if (events & CAN_MSG_RECEIVED)
+            {
+
+                storeEvents ^= CAN_MSG_RECEIVED;
+                uint8_t statusValue;
+
+                if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
+                {
+                    if(statusValue == RANGING_STARTED)
+                    {
+                        memcpy(ranging_value_can, msg_rx_Data, 4);
+                        GPIO_toggle(LED);
+
+                    }
+                }
+
+            }
+        }
+    }
 }
 
 /*********************************************************************
@@ -153,10 +190,13 @@ void CAN_msg_1_Handler(void)
  */
 static void TCAN4550_irqHandler(void)
 {
+
+
     HW_ISR_Rx(&msg_rx_ID, &msg_rx_Data[0], &msg_rx_DLC);
 
     if (msg_rx_ID == CAN_RX_ID_MSG)
     {
+
         CAN_msg_1_Handler();
     }
 }

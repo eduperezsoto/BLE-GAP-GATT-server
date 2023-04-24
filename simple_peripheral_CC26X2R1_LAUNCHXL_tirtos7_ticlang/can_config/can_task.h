@@ -48,6 +48,7 @@ extern "C"
 */
 extern uint8_t msg_tx_init_Data;
 extern uint8_t msg_rx_Data[4];
+extern uint8_t ranging_value_can[4];
 
 /*********************************************************************
  * CONSTANTS

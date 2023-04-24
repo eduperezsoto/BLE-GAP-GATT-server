@@ -105,9 +105,7 @@
 /*********************************************************************
  * CONSTANTS
  */
-//Ranging actions
-#define RANGING_STARTED                     0x01
-#define RANGING_STOPPED                     0x02
+
 
 // How often to perform periodic event (in ms)
 #define SP_PERIODIC_EVT_PERIOD               1000
@@ -118,9 +116,6 @@
 #ifndef SP_TASK_STACK_SIZE
 #define SP_TASK_STACK_SIZE                   1024
 #endif
-
-// CAN
-#define SP_RX_RANGING_VALUE                     Event_Id_00
 
 // Application events
 #define SP_STATE_CHANGE_EVT                  0
@@ -140,8 +135,7 @@
 
 // Bitwise OR of all RTOS events to pend on
 #define SP_ALL_EVENTS                        (SP_ICALL_EVT             | \
-                                              SP_QUEUE_EVT            | \
-                                              SP_RX_RANGING_VALUE)
+                                              SP_QUEUE_EVT)
 
 // Size of string-converted device address ("0xXXXXXXXXXXXX")
 #define SP_ADDR_STR_SIZE     15
@@ -719,21 +713,6 @@ static void SimplePeripheral_taskFxn(UArg a0, UArg a1)
         }
       }
 
-      // CAN
-      if (events & SP_RX_RANGING_VALUE)
-      {
-          uint8_t statusValue;
-
-          if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
-          {
-              if(statusValue == RANGING_STARTED)
-              {
-                  SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
-                                                     &msg_rx_Data);
-              }
-          }
-
-      }
 
     }
   }
@@ -1291,7 +1270,7 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
               Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value:");
           }
           break;
-
+          /*
         case RANGING_VALUE:
             if(status == RANGING_STARTED) {
                   uint8 rangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN];
@@ -1299,14 +1278,13 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
                   //Set distance in charasteristic
                   if (SimpleProfile_GetParameter(RANGING_VALUE, &rangingValue) == SUCCESS)
                   {
-
                       //UART
                       Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
                       Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",rangingValue[0], rangingValue[1], rangingValue[2], rangingValue[3] );
                   }
             }
             break;
-
+*/
         default:
           // should not reach here!
           break;
@@ -1329,7 +1307,9 @@ static void SimplePeripheral_processCharValueChangeEvt(uint8_t paramId)
  */
 static void SimplePeripheral_performPeriodicTask(void)
 {
+
   uint8_t statusValue;
+  //uint8_t currentRangingValue[SIMPLEPROFILE_RANGING_VALUE_LEN];
 
   // Call to retrieve the value of the third characteristic in the profile
   if (SimpleProfile_GetParameter(RANGING_STATUS, &statusValue) == SUCCESS)
@@ -1341,17 +1321,17 @@ static void SimplePeripheral_performPeriodicTask(void)
         //generateRandomNumber(valueToCopy);
 
         //Set distance in charasteristic
-        //SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
-        //                           &valueToCopy);
+        SimpleProfile_SetParameter(RANGING_VALUE, SIMPLEPROFILE_RANGING_VALUE_LEN,
+                                   &ranging_value_can);
 
         //UART
-        //Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
-        //Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",valueToCopy[0], valueToCopy[1], valueToCopy[2], valueToCopy[3] );
+        Display_printf(dispHandle, SP_RANGING_STATUS, 0, "Ranging status: Active");
+        Display_printf(dispHandle, SP_RANGING_VALUE, 0, "Ranging value: %x %x %x %x",ranging_value_can[0], ranging_value_can[1], ranging_value_can[2], ranging_value_can[3] );
 
     }
   }
-}
 
+}
 
 static void generateRandomNumber(uint8 *array) {
     srand(time(NULL));

@@ -27,6 +27,7 @@ const GPIO4        = GPIO.addInstance();
 const GPIO5        = GPIO.addInstance();
 const GPIO6        = GPIO.addInstance();
 const GPIO7        = GPIO.addInstance();
+const GPIO11       = GPIO.addInstance();
 const NVS          = scripting.addModule("/ti/drivers/NVS");
 const NVS1         = NVS.addInstance();
 const Power        = scripting.addModule("/ti/drivers/Power");
@@ -115,6 +116,7 @@ GPIO4.gpioPin.$assign = "ball.20";
 
 GPIO5.$name            = "Board_TCAN4550_IRQ";
 GPIO5.interruptTrigger = "Falling Edge";
+GPIO5.invert           = true;
 GPIO5.gpioPin.$assign  = "ball.14";
 
 GPIO6.$name              = "Board_GPIO_TCAN4550_CS";
@@ -127,16 +129,22 @@ GPIO7.$name           = "Board_GPIO_TCAN4550_CAN_RST";
 GPIO7.mode            = "Output";
 GPIO7.gpioPin.$assign = "ball.15";
 
+GPIO11.$name           = "LED";
+GPIO11.mode            = "Output";
+GPIO11.gpioPin.$assign = "ball.38";
+
 NVS1.$name                    = "CONFIG_NVSINTERNAL";
 NVS1.internalFlash.$name      = "ti_drivers_nvs_NVSCC26XX0";
 NVS1.internalFlash.regionBase = 0x48000;
 NVS1.internalFlash.regionSize = 0x4000;
 
-SPI1.$name               = "Board_SPI0";
-SPI1.spi.$assign         = "SSI0";
-SPI1.spi.sclkPin.$assign = "ball.9";
-SPI1.spi.misoPin.$assign = "ball.7";
-SPI1.spi.mosiPin.$assign = "ball.8";
+SPI1.$name                    = "Board_SPI0";
+SPI1.spi.$assign              = "SSI0";
+SPI1.spi.sclkPin.$assign      = "ball.9";
+SPI1.spi.misoPin.$assign      = "ball.7";
+SPI1.spi.mosiPin.$assign      = "ball.8";
+SPI1.spi.dmaRxChannel.$assign = "DMA_CH3";
+SPI1.spi.dmaTxChannel.$assign = "DMA_CH4";
 
 TRNG1.$name = "CONFIG_TRNG_0";
 
@@ -183,11 +191,3 @@ System.abortFxn        = "System_abortSpin";
 System.exitFxn         = "System_exitSpin";
 System.extendedFormats = "%f";
 System.supportModule   = "SysCallback";
-
-/**
- * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
- * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
- * re-solve from scratch.
- */
-SPI1.spi.dmaRxChannel.$suggestSolution = "DMA_CH3";
-SPI1.spi.dmaTxChannel.$suggestSolution = "DMA_CH4";
